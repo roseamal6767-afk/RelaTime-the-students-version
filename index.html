@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RelaTime - The Student's Version</title>
+    <style>
+        /* --- Dark Aesthetic Theme Variables --- */
+        :root {
+            --bg-gradient: linear-gradient(135deg, #090b0e 0%, #12161f 100%);
+            --card-bg: rgba(26, 32, 44, 0.65);
+            --border-color: rgba(255, 255, 255, 0.06);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-glow: #00f2fe;
+            --accent-study: #00f2fe;
+            --accent-break: #38bdf8;
+            --accent-alert: #f43f5e;
+            --shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: '-apple-system', BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* --- Adaptive Application Frame --- */
+        .app-container {
+            width: 100%;
+            max-width: 850px;
+            height: 100vh;
+            max-height: 580px;
+            background: rgba(15, 19, 26, 0.95);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @media (min-width: 600px) {
+            .app-container {
+                border-radius: 28px;
+                height: 90vh;
+            }
+        }
+
+        /* --- Screen Architecture --- */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 1.8rem;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .screen.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(0);
+        }
+
+        .screen.hidden-left { transform: translateX(-100%); }
+        .screen.hidden-right { transform: translateX(100%); }
+
+        /* --- Branding Typographies --- */
+        .brand-header {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .brand-name {
+            font-size: 2.8rem;
+            font-weight: 900;
+            letter-spacing: 3px;
+            background: linear-gradient(to right, #00f2fe, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.3rem;
+        }
+
+        .brand-tagline {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        /* --- Feature Badges (Home Screen) --- */
+        .badge-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            width: 100%;
+            max-width: 400px;
+            margin: 1.5rem auto;
+        }
+
+        .feature-badge {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 0.9rem 1.2rem;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge-icon {
+            font-size: 1.2rem;
+            background: rgba(0, 242, 254, 0.1);
+            color: var(--accent-glow);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 8px;
+        }
+
+        .badge-text { text-align: left; }
+        .badge-title { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
+        .badge-desc { font-size: 0.75rem; color: var(--text-secondary); margin-top: 1px; }
+
+        /* --- Glassmorphic UI Cards --- */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 1.2rem;
+            backdrop-filter: blur(16px);
+        }
+
+        /* --- Action Buttons --- */
+        .btn {
+            background: linear-gradient(135deg, #00f2fe 0%, #3b82f6 100%);
+            color: #090b0e;
+            border: none;
+            padding: 1.1rem 2rem;
+            font-size: 1.05rem;
+            font-weight: 700;
+            border-radius: 14px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 20px rgba(0, 242, 254, 0.25);
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0, 242, 254, 0.45);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            box-shadow: none;
+            margin-top: 8px;
+            padding: 0.6rem 2rem;
+            font-size: 0.85rem;
+        }
+        .btn-secondary:hover { background: rgba(255, 255, 255, 0.08); }
+
+        /* --- Home Layout Structure --- */
+        #home-screen {
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* --- Workspace Architecture --- */
+        .workspace-header {
+            text-align: center;
+            margin-bottom: 0.2rem;
+        }
+
+        .workspace-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: var(--text-primary);
+        }
+
+        .workspace-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 2px;
+        }
+
+        .status-badge {
+            padding: 0.35rem 0.9rem;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            background: rgba(0, 242, 254, 0.08);
+            color: var(--accent-study);
+            border: 1px solid rgba(0, 242, 254, 0.15);
+            margin: 0.5rem auto 0.8rem auto;
+            width: fit-content;
+        }
+
+        /* Horizontal Split Grid Configuration */
+        .split-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            flex: 1;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        @media (min-width: 580px) {
+            .split-grid {
+                flex-direction: row;
+            }
+            .timer-card, .todo-card {
+                flex: 1;
+                width: 50%;
+            }
+        }
+
+        /* Left Card Components: Pomodoro Clock */
+        .timer-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timer-display {
+            font-size: 3.8rem;
+            font-weight: 800;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -1px;
+            background: linear-gradient(to bottom, #ffffff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.1;
+            margin-bottom: 0.2rem;
+        }
+
+        .timer-description {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.8rem;
+            min-height: 36px;
+            max-width: 260px;
+        }
+
+        /* Right Card Components: Task Management Module */
+        .todo-card {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .todo-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+            color: var(--text-primary);
+        }
+
+        .todo-input-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 0.8rem;
+        }
+
+        .todo-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.7rem 0.9rem;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .todo-input:focus { border-color: var(--accent-glow); }
+
+        .btn-add {
+            padding: 0 1rem;
+            background: var(--accent-glow);
+            color: #090b0e;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .todo-list {
+            list-style: none;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.65rem 0.25rem;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .todo-item-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden;
+        }
+
+        .todo-checkbox {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--text-secondary);
+            border-radius: 5px;
+            cursor: pointer;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .todo-checkbox:checked { background: var(--accent-glow); border-color: var(--accent-glow); }
+        .todo-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            color: #090b0e;
+            font-size: 11px;
+            font-weight: bold;
+            top: -2px;
+            left: 2px;
+        }
+
+        .todo-text {
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .todo-checkbox:checked + .todo-text { color: var(--text-secondary); text-decoration: line-through; }
+
+        .btn-delete { background: transparent; border: none; color: var(--accent-alert); cursor: pointer; opacity: 0.5; }
+        .btn-delete:hover { opacity: 1; }
+
+        /* --- Reminders Overlay Modals --- */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(9, 11, 14, 0.97);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            text-align: center;
+            z-index: 10;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+        .overlay.active { opacity: 1; pointer-events: auto; }
+        .overlay-icon { font-size: 3rem; color: var(--accent-glow); margin-bottom: 1.5rem; animation: float 2.5s infinite ease-in-out; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+
+        <!-- SCREEN 1: HOME PAGE -->
+        <div id="home-screen" class="screen active">
+            <div class="brand-header">
+                <h1 class="brand-name">RelaTime</h1>
+                <p class="brand-tagline">The Student's Version</p>
+            </div>
+
+            <!-- Value Proposition Badges -->
+            <div class="badge-container">
+                <div class="feature-badge">
+                    <div class="badge-icon">💖</div>
+                    <div class="badge-text">
+                        <div class="badge-title">Zero Profit</div>
+                        <div class="badge-desc">Built purely for academic growth, not income.</div>
+                    </div>
+                </div>
+                <div class="feature-badge">
+                    <div class="badge-icon">🛡️</div>
+                    <div class="badge-text">
+                        <div class="badge-title">100% Ad-Free</div>
+                        <div class="badge-desc">No commercial popups. Zero modern distractions.</div>
+                    </div>
+                </div>
+                <div class="feature-badge">
+                    <div class="badge-icon">🔒</div>
+                    <div class="badge-text">
+                        <div class="badge-title">Privacy Focused</div>
+                        <div class="badge-desc">Your task lists and focus hours stay on your device.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="width: 100%; padding-bottom: 1rem; text-align: center;">
+                <button class="btn" id="btn-start-studying" style="max-width: 400px; margin: 0 auto;">Start Studying</button>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: WORKSPACE -->
+        <div id="workspace-screen" class="screen hidden-right">
+            
+            <div class="workspace-header">
+                <h2 class="workspace-title">RelaTime</h2>
+                <p class="workspace-subtitle">The Student's Version</p>
+            </div>
+
+            <div class="status-badge" id="current-state-badge">Study Session</div>
+
+            <!-- Side-by-Side Content Grid Framework -->
+            <div class="split-grid">
+                
+                <!-- Left Core Area: Pomodoro Module -->
+                <div class="card timer-card">
+                    <div class="timer-display" id="timer-clock">25:00</div>
+                    <div class="timer-description" id="timer-desc">Stay locked in. Distractions are external.</div>
+                    <button class="btn" id="timer-main-btn">Start Studying</button>
+                    <button class="btn btn-secondary" id="timer-reset-btn" style="display:none;">Reset</button>
+                </div>
+
+                <!-- Right Core Area: Task Module -->
+                <div class="card todo-card">
+                    <div class="todo-title">Focus Targets</div>
+                    <div class="todo-input-row">
+                        <input type="text" class="todo-input" id="todo-input" placeholder="What needs doing?">
+                        <button class="btn-add" id="btn-add-todo">+</button>
+                    </div>
+                    <ul class="todo-list" id="todo-list-container">
+                        <!-- Items generate here programmatically -->
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- POPUP INTERMITTENT OVERLAY -->
+        <div id="reminder-overlay" class="overlay">
+            <div class="overlay-icon">💧</div>
+            <h2 style="margin-bottom: 0.8rem;">Time to Calibrate</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem; max-width: 290px; font-size: 0.95rem;">
+                Take a sip of water and perform a quick, light stretch to reset your focus.
+            </p>
+            <button class="btn" id="btn-dismiss-reminder" style="max-width: 220px;">Got it</button>
+        </div>
+
+    </div>
+
+    <!-- AUDIO ENGINE CONTROLLER & CLOCK LOGIC -->
+    <script>
+        let currentMode = 'STUDY'; 
+        let timerInterval = null;
+        let waterReminderInterval = null;
+        
+        const STUDY_TIME = 25 * 60; 
+        const BREAK_TIME = 5 * 60;
+        const WATER_REMINDER_TIME = 10 * 60; 
+
+        let timeLeft = STUDY_TIME;
+
+        // --- DOM Elements Reference Mapping ---
+        const homeScreen = document.getElementById('home-screen');
+        const workspaceScreen = document.getElementById('workspace-screen');
+        const btnStartStudyingHome = document.getElementById('btn-start-studying');
+        
+        const timerClock = document.getElementById('timer-clock');
+        const timerDesc = document.getElementById('timer-desc');
+        const timerMainBtn = document.getElementById('timer-main-btn');
+        const timerResetBtn = document.getElementById('timer-reset-btn');
+        const stateBadge = document.getElementById('current-state-badge');
+        
+        const todoInput = document.getElementById('todo-input');
+        const todoAddBtn = document.getElementById('btn-add-todo');
+        const todoListContainer = document.getElementById('todo-list-container');
+        
+        const reminderOverlay = document.getElementById('reminder-overlay');
+        const reminderDismissBtn = document.getElementById('btn-dismiss-reminder');
+
+        // --- Native Math/Oscillator Wave Form Audio Alerts ---
+        function playAlarmSound() {
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            for(let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    let osc = context.createOscillator();
+                    let gain = context.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(880, context.currentTime); 
+                    gain.gain.setValueAtTime(0.2, context.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.4);
+                    osc.connect(gain);
+                    gain.connect(context.destination);
+                    osc.start();
+                    osc.stop(context.currentTime + 0.5);
+                }, i * 500);
+            }
+        }
+
+        // --- State/Transition Navigations ---
+        btnStartStudyingHome.addEventListener('click', () => {
+            homeScreen.classList.remove('active');
+            homeScreen.classList.add('hidden-left');
+            workspaceScreen.classList.remove('hidden-right');
+            workspaceScreen.classList.add('active');
+            
+            initiateWaterReminders();
+            startTimer();
+        });
+
+        // --- Core Application Algorithms ---
+        function updateTimerUI() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerClock.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function startTimer() {
+            if (timerInterval) return;
+
+            timerMainBtn.textContent = "Pause Session";
+            timerMainBtn.style.background = "rgba(255, 255, 255, 0.04)";
+            timerMainBtn.style.color = "var(--text-primary)";
+            timerMainBtn.style.border = "1px solid var(--border-color)";
+            timerMainBtn.style.boxShadow = "none";
+            timerResetBtn.style.display = "block";
+
+            timerInterval = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    updateTimerUI();
+                } else {
+                    handleTimerCompletion();
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            timerMainBtn.textContent = currentMode === 'STUDY' ? "Resume Studying" : "Resume Break";
+            timerMainBtn.style.background = "linear-gradient(135deg, #00f2fe 0%, #3b82f6 100%)";
+            timerMainBtn.style.color = "#090b0e";
+            timerMainBtn.style.boxShadow = "0 4px 20px rgba(0, 242, 254, 0.25)";
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            timeLeft = currentMode === 'STUDY' ? STUDY_TIME : BREAK_TIME;
+            updateTimerUI();
+            timerResetBtn.style.display = "none";
+            timerMainBtn.textContent = currentMode === 'STUDY' ? "Start Studying" : "Start Break";
+        }
+
+        timerMainBtn.addEventListener('click', () => {
+            if (timerInterval) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        });
+
+        timerResetBtn.addEventListener('click', resetTimer);
+
+        function handleTimerCompletion() {
+            pauseTimer();
+            playAlarmSound();
+            
+            if (currentMode === 'STUDY') {
+                currentMode = 'BREAK';
+                timeLeft = BREAK_TIME;
+                stateBadge.textContent = "Relax Session";
+                stateBadge.style.color = "var(--accent-break)";
+                stateBadge.style.background = "rgba(56, 189, 248, 0.08)";
+                stateBadge.style.borderColor = "rgba(56, 189, 248, 0.15)";
+                timerDesc.textContent = "Drink water and move around.";
+                timerMainBtn.textContent = "Start Break";
+            } else {
+                currentMode = 'STUDY';
+                timeLeft = STUDY_TIME;
+                stateBadge.textContent = "Study Session";
+                stateBadge.style.color = "var(--accent-study)";
+                stateBadge.style.background = "rgba(0, 242, 254, 0.08)";
+                stateBadge.style.borderColor = "rgba(0, 242, 254, 0.15)";
+                timerDesc.textContent = "Stay locked in. Distractions are external.";
+                timerMainBtn.textContent = "Start Studying";
+            }
+            
+            timerResetBtn.style.display = "none";
+            updateTimerUI();
+        }
+
+        function initiateWaterReminders() {
+            if (waterReminderInterval) clearInterval(waterReminderInterval);
+            waterReminderInterval = setInterval(() => {
+                if (currentMode === 'STUDY') {
+                    reminderOverlay.classList.add('active');
+                }
+            }, WATER_REMINDER_TIME * 1000);
+        }
+
+        reminderDismissBtn.addEventListener('click', () => {
+            reminderOverlay.classList.remove('active');
+        });
+
+        // --- To-Do Component Handlers ---
+        function createTodoItem(text) {
+            const li = document.createElement('li');
+            li.className = 'todo-item';
+            li.innerHTML = `
+                <div class="todo-item-left">
+                    <input type="checkbox" class="todo-checkbox">
+                    <span class="todo-text">${text}</span>
+                </div>
+                <button class="btn-delete">✕</button>
+            `;
+            li.querySelector('.btn-delete').addEventListener('click', () => {
+                li.remove();
+            });
+            return li;
+        }
+
+        function addTodo() {
+            const text = todoInput.value.trim();
+            if (text !== '') {
+                const item = createTodoItem(text);
+                todoListContainer.appendChild(item);
+                todoInput.value = '';
+                todoListContainer.scrollTop = todoListContainer.scrollHeight;
+            }
+        }
+
+        todoAddBtn.addEventListener('click', addTodo);
+        todoInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addTodo();
+        });
+    </script>
+</body>
+</html>
